@@ -16,6 +16,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.ui.theme.Black
 import com.example.myapplication.ui.theme.White
@@ -78,6 +80,15 @@ fun HomeScreen(
                             )
                         }
                     }
+                    
+                    // Logo
+                    Image(
+                        painter = painterResource(id = com.example.myapplication.R.drawable.logo),
+                        contentDescription = "zacode logo",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .padding(bottom = 24.dp)
+                    )
                     
                     uiState.user?.let { user ->
                         Text(
