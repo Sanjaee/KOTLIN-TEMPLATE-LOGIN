@@ -1,5 +1,7 @@
 package com.example.myapplication.navigation
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -31,6 +33,30 @@ sealed class Screen(val route: String) {
     }
 }
 
+// Slide animation helper - Gojek style
+// Masuk: slide dari kanan ke kiri
+// Keluar (back): slide dari kiri ke kanan
+private fun slideInFromRight() = slideInHorizontally(
+    initialOffsetX = { it },
+    animationSpec = tween(300)
+) + fadeIn(animationSpec = tween(300))
+
+private fun slideOutToLeft() = slideOutHorizontally(
+    targetOffsetX = { -it },
+    animationSpec = tween(300)
+) + fadeOut(animationSpec = tween(300))
+
+private fun slideInFromLeft() = slideInHorizontally(
+    initialOffsetX = { -it },
+    animationSpec = tween(300)
+) + fadeIn(animationSpec = tween(300))
+
+private fun slideOutToRight() = slideOutHorizontally(
+    targetOffsetX = { it },
+    animationSpec = tween(300)
+) + fadeOut(animationSpec = tween(300))
+
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun NavGraph(
     startDestination: String = Screen.Login.route,
@@ -42,7 +68,13 @@ fun NavGraph(
         navController = navController,
         startDestination = startDestination
     ) {
-        composable(Screen.Login.route) {
+        composable(
+            route = Screen.Login.route,
+            enterTransition = { slideInFromRight() },
+            exitTransition = { slideOutToLeft() },
+            popEnterTransition = { slideInFromLeft() },
+            popExitTransition = { slideOutToRight() }
+        ) {
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate(Screen.Home.route) {
@@ -61,7 +93,13 @@ fun NavGraph(
             )
         }
         
-        composable(Screen.Register.route) {
+        composable(
+            route = Screen.Register.route,
+            enterTransition = { slideInFromRight() },
+            exitTransition = { slideOutToLeft() },
+            popEnterTransition = { slideInFromLeft() },
+            popExitTransition = { slideOutToRight() }
+        ) {
             RegisterScreen(
                 onRegisterSuccess = {
                     // Will navigate to VerifyOTP from ViewModel
@@ -81,7 +119,11 @@ fun NavGraph(
         
         composable(
             route = Screen.VerifyOTP.route,
-            arguments = listOf(navArgument("email") { type = NavType.StringType })
+            arguments = listOf(navArgument("email") { type = NavType.StringType }),
+            enterTransition = { slideInFromRight() },
+            exitTransition = { slideOutToLeft() },
+            popEnterTransition = { slideInFromLeft() },
+            popExitTransition = { slideOutToRight() }
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             VerifyOTPScreen(
@@ -99,7 +141,13 @@ fun NavGraph(
             )
         }
         
-        composable(Screen.ForgotPassword.route) {
+        composable(
+            route = Screen.ForgotPassword.route,
+            enterTransition = { slideInFromRight() },
+            exitTransition = { slideOutToLeft() },
+            popEnterTransition = { slideInFromLeft() },
+            popExitTransition = { slideOutToRight() }
+        ) {
             ForgotPasswordScreen(
                 onResetSuccess = {
                     navController.navigate(Screen.Login.route) {
@@ -119,7 +167,11 @@ fun NavGraph(
         
         composable(
             route = Screen.VerifyOTPReset.route,
-            arguments = listOf(navArgument("email") { type = NavType.StringType })
+            arguments = listOf(navArgument("email") { type = NavType.StringType }),
+            enterTransition = { slideInFromRight() },
+            exitTransition = { slideOutToLeft() },
+            popEnterTransition = { slideInFromLeft() },
+            popExitTransition = { slideOutToRight() }
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             VerifyOTPResetScreen(
@@ -140,7 +192,11 @@ fun NavGraph(
             arguments = listOf(
                 navArgument("email") { type = NavType.StringType },
                 navArgument("otpCode") { type = NavType.StringType }
-            )
+            ),
+            enterTransition = { slideInFromRight() },
+            exitTransition = { slideOutToLeft() },
+            popEnterTransition = { slideInFromLeft() },
+            popExitTransition = { slideOutToRight() }
         ) { backStackEntry ->
             val email = android.net.Uri.decode(backStackEntry.arguments?.getString("email") ?: "")
             val otpCode = android.net.Uri.decode(backStackEntry.arguments?.getString("otpCode") ?: "")
@@ -162,7 +218,11 @@ fun NavGraph(
         
         composable(
             route = Screen.VerifyEmail.route,
-            arguments = listOf(navArgument("token") { type = NavType.StringType })
+            arguments = listOf(navArgument("token") { type = NavType.StringType }),
+            enterTransition = { slideInFromRight() },
+            exitTransition = { slideOutToLeft() },
+            popEnterTransition = { slideInFromLeft() },
+            popExitTransition = { slideOutToRight() }
         ) { backStackEntry ->
             val token = backStackEntry.arguments?.getString("token") ?: ""
             VerifyEmailScreen(
@@ -180,7 +240,13 @@ fun NavGraph(
             )
         }
         
-        composable(Screen.Home.route) {
+        composable(
+            route = Screen.Home.route,
+            enterTransition = { slideInFromRight() },
+            exitTransition = { slideOutToLeft() },
+            popEnterTransition = { slideInFromLeft() },
+            popExitTransition = { slideOutToRight() }
+        ) {
             HomeScreen(
                 onLogout = {
                     onLogout()

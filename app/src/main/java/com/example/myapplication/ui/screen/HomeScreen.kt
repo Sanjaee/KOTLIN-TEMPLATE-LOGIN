@@ -1,15 +1,24 @@
 package com.example.myapplication.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.ui.theme.Black
+import com.example.myapplication.ui.theme.White
 import com.example.myapplication.ui.viewmodel.HomeViewModel
 import com.example.myapplication.ui.viewmodel.ViewModelFactory
 
@@ -24,75 +33,127 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Home") },
-                actions = {
-                    TextButton(onClick = onLogout) {
-                        Text("Logout")
-                    }
-                }
-            )
-        }
+        containerColor = White
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(White)
                 .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = if (uiState.isLoading) Arrangement.Center else Arrangement.Top
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Loading user data...")
-            } else {
-                uiState.user?.let { user ->
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(color = Black)
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Welcome!",
-                        style = MaterialTheme.typography.headlineLarge
+                        "Loading user data...",
+                        color = Color(0xFF6B7280),
+                        fontSize = 16.sp
                     )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Logout Button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.End
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        TextButton(onClick = onLogout) {
                             Text(
-                                text = "User Information",
-                                style = MaterialTheme.typography.titleLarge
+                                "Logout",
+                                color = Black,
+                                fontWeight = FontWeight.Medium
                             )
-                            
-                            Divider()
-                            
-                            InfoRow("Email", user.email)
-                            InfoRow("Full Name", user.fullName)
-                            user.username?.let { InfoRow("Username", it) }
-                            InfoRow("User Type", user.userType)
-                            InfoRow("Status", if (user.isActive) "Active" else "Inactive")
-                            InfoRow("Verified", if (user.isVerified) "Yes" else "No")
                         }
                     }
-                } ?: run {
-                    Text(
-                        text = "Failed to load user data",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
-                    )
                     
-                    uiState.errorMessage?.let { error ->
-                        Spacer(modifier = Modifier.height(8.dp))
+                    uiState.user?.let { user ->
                         Text(
-                            text = error,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
+                            text = "Welcome!",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Black,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
+                        
+                        Text(
+                            text = "Your profile information",
+                            fontSize = 16.sp,
+                            color = Color(0xFF6B7280),
+                            modifier = Modifier.padding(bottom = 24.dp)
+                        )
+                        
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = White
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE5E7EB))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    text = "User Information",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Black
+                                )
+                                
+                                Divider(color = Color(0xFFE5E7EB))
+                                
+                                InfoRow("Email", user.email)
+                                InfoRow("Full Name", user.fullName)
+                                user.username?.let { InfoRow("Username", it) }
+                                InfoRow("User Type", user.userType)
+                                InfoRow("Status", if (user.isActive) "Active" else "Inactive")
+                                InfoRow("Verified", if (user.isVerified) "Yes" else "No")
+                            }
+                        }
+                    } ?: run {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFEE2E2)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Failed to load user data",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFDC2626),
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                                
+                                uiState.errorMessage?.let { error ->
+                                    Text(
+                                        text = error,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFDC2626)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -109,12 +170,14 @@ private fun InfoRow(label: String, value: String) {
         Text(
             text = "$label:",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            color = Color(0xFF6B7280),
+            fontWeight = FontWeight.Medium
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
+            color = Black,
+            fontWeight = FontWeight.Normal
         )
     }
 }
-

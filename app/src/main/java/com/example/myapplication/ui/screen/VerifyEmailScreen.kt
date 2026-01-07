@@ -1,13 +1,20 @@
 package com.example.myapplication.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.ui.theme.Black
+import com.example.myapplication.ui.theme.White
 import com.example.myapplication.ui.viewmodel.VerifyEmailViewModel
 import com.example.myapplication.ui.viewmodel.ViewModelFactory
 
@@ -35,44 +42,113 @@ fun VerifyEmailScreen(
     }
     
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Verify Email") })
-        }
+        containerColor = White
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(White)
                 .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Verifying email...")
-            } else if (uiState.isVerifySuccess) {
-                Text(
-                    text = "Email verified successfully!",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            } else {
-                uiState.errorMessage?.let { error ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(color = Black)
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = error,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge
+                        "Verifying email...",
+                        fontSize = 16.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                } else if (uiState.isVerifySuccess) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFD1FAE5)
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "✓",
+                                fontSize = 48.sp,
+                                color = Color(0xFF059669),
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                            Text(
+                                text = "Email Verified!",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF059669),
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            Text(
+                                text = "Your email has been successfully verified.",
+                                fontSize = 16.sp,
+                                color = Color(0xFF047857),
+                                modifier = Modifier.padding(bottom = 24.dp)
+                            )
+                        }
+                    }
+                } else {
+                    uiState.errorMessage?.let { error ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFEE2E2)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "✗",
+                                    fontSize = 48.sp,
+                                    color = Color(0xFFDC2626),
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+                                Text(
+                                    text = "Verification Failed",
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFDC2626),
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                                Text(
+                                    text = error,
+                                    fontSize = 16.sp,
+                                    color = Color(0xFF991B1B),
+                                    modifier = Modifier.padding(bottom = 24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                TextButton(
+                    onClick = onNavigateToLogin,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "Back to Login",
+                        color = Black,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp
                     )
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            TextButton(onClick = onNavigateToLogin) {
-                Text("Back to Login")
             }
         }
     }
 }
-
