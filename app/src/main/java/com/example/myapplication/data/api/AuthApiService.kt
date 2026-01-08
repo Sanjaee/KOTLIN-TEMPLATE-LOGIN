@@ -20,9 +20,6 @@ interface AuthApiService {
     @POST("api/v1/auth/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<ApiResponse<Nothing>>
     
-    @POST("api/v1/auth/verify-otp-reset")
-    suspend fun verifyResetOTP(@Body request: VerifyResetOTPRequest): Response<ApiResponse<Nothing>>
-    
     @POST("api/v1/auth/verify-reset-password")
     suspend fun verifyResetPassword(@Body request: VerifyResetPasswordRequest): Response<ApiResponse<Nothing>>
     
@@ -31,5 +28,8 @@ interface AuthApiService {
     
     @GET("api/v1/auth/me")
     suspend fun getMe(@Header("Authorization") token: String): Response<ApiResponse<Map<String, User>>>
+    
+    @POST("api/v1/auth/google-oauth")
+    suspend fun googleOAuth(@Body request: GoogleOAuthRequest): Response<ApiResponse<AuthResponse>>
 }
 

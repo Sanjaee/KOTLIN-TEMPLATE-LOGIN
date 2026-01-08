@@ -73,9 +73,14 @@ class MainActivity : ComponentActivity() {
                     delay(2000)
                     showSplash = false
                     
-                    // Check login state
-                    val loggedIn = repository.isLoggedIn()
-                    startDestination = if (loggedIn) Screen.Home.route else Screen.Login.route
+                    // Check login state with error handling
+                    try {
+                        val loggedIn = repository.isLoggedIn()
+                        startDestination = if (loggedIn) Screen.Home.route else Screen.Login.route
+                    } catch (e: Exception) {
+                        // Jika ada error, default ke Login screen
+                        startDestination = Screen.Login.route
+                    }
                 }
                 
                 // Show loading or nothing until we determine start destination

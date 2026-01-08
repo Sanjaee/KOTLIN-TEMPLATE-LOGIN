@@ -172,27 +172,6 @@ class AuthRepository(private val context: Context) {
         }
     }
     
-    suspend fun verifyResetOTP(request: VerifyResetOTPRequest): Result<Unit> {
-        return try {
-            val response = apiService.verifyResetOTP(request)
-            if (response.isSuccessful) {
-                val responseBody = response.body()
-                val isSuccess = responseBody?.success != false
-                if (isSuccess) {
-                    Result.success(Unit)
-                } else {
-                    val errorMessage = parseErrorMessage(response.errorBody()?.string())
-                    Result.failure(Exception(errorMessage))
-                }
-            } else {
-                val errorMessage = parseErrorMessage(response.errorBody()?.string())
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
     suspend fun verifyResetPassword(request: VerifyResetPasswordRequest): Result<Unit> {
         return try {
             val response = apiService.verifyResetPassword(request)
@@ -266,6 +245,35 @@ class AuthRepository(private val context: Context) {
                     responseBody?.data?.get("user")?.let { user ->
                         Result.success(user as User)
                     } ?: Result.failure(Exception("User data not found"))
+                } else {
+                    val errorMessage = parseErrorMessage(response.errorBody()?.string())
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                val errorMessage = parseErrorMessage(response.errorBody()?.string())
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun googleOAuth(request: GoogleOAuthRequest): Result<AuthResponse> {
+        return try {
+            val response = apiService.googleOAuth(request)
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                val isSuccess = responseBody?.success != false && responseBody?.data != null
+                if (isSuccess) {
+                    responseBody?.data?.let { authResponse ->
+                        // Save tokens
+                        preferencesManager.saveTokens(
+                            authResponse.accessToken,
+                            authResponse.refreshToken,
+                            authResponse.user.email
+                        )
+                        Result.success(authResponse)
+                    } ?: Result.failure(Exception("Response data is null"))
                 } else {
                     val errorMessage = parseErrorMessage(response.errorBody()?.string())
                     Result.failure(Exception(errorMessage))

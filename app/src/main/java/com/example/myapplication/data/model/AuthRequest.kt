@@ -78,3 +78,16 @@ data class VerifyEmailRequest(
     val token: String
 )
 
+data class GoogleOAuthRequest(
+    @SerializedName("email")
+    val email: String,
+    
+    @SerializedName("full_name")
+    val fullName: String,
+    
+    @SerializedName("profile_photo")
+    val profilePhoto: String? = null,
+    
+    @SerializedName("google_id")
+    val googleId: String
+)

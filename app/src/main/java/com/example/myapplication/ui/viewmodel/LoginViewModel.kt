@@ -3,11 +3,16 @@ package com.example.myapplication.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myapplication.data.model.GoogleOAuthRequest
 import com.example.myapplication.data.model.LoginRequest
 import com.example.myapplication.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 
 data class LoginUiState(
     val isLoading: Boolean = false,
@@ -60,6 +65,66 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     
     fun resetSuccessState() {
         _uiState.value = _uiState.value.copy(isLoginSuccess = false)
+    }
+    
+    fun signInWithGoogle(googleSignInAccount: GoogleSignInAccount) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            try {
+                // Get Google ID token
+                val idToken = googleSignInAccount.idToken
+                if (idToken == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Failed to get Google ID token"
+                    )
+                    return@launch
+                }
+                
+                // Authenticate with Firebase
+                val credential = GoogleAuthProvider.getCredential(idToken, null)
+                val firebaseAuth = FirebaseAuth.getInstance()
+                val firebaseUser = firebaseAuth.signInWithCredential(credential).await().user
+                
+                if (firebaseUser != null) {
+                    // Create Google OAuth request
+                    val request = GoogleOAuthRequest(
+                        email = firebaseUser.email ?: "",
+                        fullName = firebaseUser.displayName ?: "",
+                        profilePhoto = firebaseUser.photoUrl?.toString(),
+                        googleId = firebaseUser.uid
+                    )
+                    
+                    // Send to backend API
+                    repository.googleOAuth(request).fold(
+                        onSuccess = {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                isLoginSuccess = true,
+                                errorMessage = null
+                            )
+                        },
+                        onFailure = { error ->
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = error.message ?: "Google sign in failed"
+                            )
+                        }
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Failed to authenticate with Google"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Google sign in failed"
+                )
+            }
+        }
     }
 }
 

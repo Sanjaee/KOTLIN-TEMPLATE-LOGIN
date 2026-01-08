@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.model.ForgotPasswordRequest
-import com.example.myapplication.data.model.VerifyResetOTPRequest
 import com.example.myapplication.data.model.VerifyResetPasswordRequest
 import com.example.myapplication.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,42 +53,32 @@ class ForgotPasswordViewModel(application: Application) : AndroidViewModel(appli
         }
     }
     
-    // Verify OTP for reset password (step 1)
+    // Verify OTP for reset password (step 1) - Client-side validation only
+    // Actual OTP verification will be done together with password reset in step 2
     fun verifyResetOTP(email: String, otpCode: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            
-            // Trim whitespace and newline characters
-            val trimmedEmail = email.trim()
-            val trimmedOtpCode = otpCode.trim()
-            
-            // Use verifyResetOTP endpoint to verify the OTP code without clearing it
-            val request = VerifyResetOTPRequest(
-                email = trimmedEmail,
-                otpCode = trimmedOtpCode
+        // Trim whitespace and newline characters
+        val trimmedEmail = email.trim()
+        val trimmedOtpCode = otpCode.trim()
+        
+        // Client-side validation: Check if OTP is 6 digits
+        if (trimmedOtpCode.length != 6 || !trimmedOtpCode.all { it.isDigit() }) {
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                isOtpVerified = false,
+                errorMessage = "OTP must be 6 digits"
             )
-            
-            repository.verifyResetOTP(request).fold(
-                onSuccess = {
-                    // OTP verified successfully
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isOtpVerified = true,
-                        verifiedOtpCode = trimmedOtpCode,
-                        email = trimmedEmail,
-                        errorMessage = null
-                    )
-                },
-                onFailure = { error ->
-                    // OTP verification failed
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isOtpVerified = false,
-                        errorMessage = error.message ?: "Invalid or expired OTP"
-                    )
-                }
-            )
+            return
         }
+        
+        // OTP format is valid, mark as verified and proceed to password screen
+        // Actual verification will happen in step 2 when submitting password
+        _uiState.value = _uiState.value.copy(
+            isLoading = false,
+            isOtpVerified = true,
+            verifiedOtpCode = trimmedOtpCode,
+            email = trimmedEmail,
+            errorMessage = null
+        )
     }
     
     // Set new password after OTP verified (step 2)

@@ -28,11 +28,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.myapplication.data.repository.AuthRepository
 import com.example.myapplication.ui.theme.Black
 import com.example.myapplication.ui.theme.White
 import com.example.myapplication.ui.viewmodel.LoginViewModel
 import com.example.myapplication.ui.viewmodel.ViewModelFactory
+import com.example.myapplication.util.GoogleSignInHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,11 +55,35 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsState()
     
+    // Google Sign In - hanya inisialisasi jika sudah dikonfigurasi
+    val isGoogleSignInConfigured = remember { GoogleSignInHelper.isGoogleSignInConfigured(context) }
+    val googleSignInClient = remember(isGoogleSignInConfigured) { 
+        if (isGoogleSignInConfigured) {
+            GoogleSignInHelper.getGoogleSignInClient(context)
+        } else {
+            null
+        }
+    }
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val account = GoogleSignInHelper.handleSignInResult(result.data)
+        account?.let {
+            viewModel.signInWithGoogle(it)
+        } ?: run {
+            // Handle error if needed
+        }
+    }
+    
     // Check if user is already logged in and redirect to Home
     LaunchedEffect(Unit) {
-        val loggedIn = repository.isLoggedIn()
-        if (loggedIn) {
-            onLoginSuccess()
+        try {
+            val loggedIn = repository.isLoggedIn()
+            if (loggedIn) {
+                onLoginSuccess()
+            }
+        } catch (e: Exception) {
+            // Handle error gracefully, continue to show login screen
         }
     }
     
@@ -252,6 +279,85 @@ fun LoginScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
+                }
+                
+                // Google Sign In hanya ditampilkan jika sudah dikonfigurasi
+                if (isGoogleSignInConfigured && googleSignInClient != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Divider with "OR"
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFFE5E7EB),
+                            thickness = 1.dp
+                        )
+                        Text(
+                            text = "OR",
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = Color(0xFF9CA3AF),
+                            fontSize = 14.sp
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFFE5E7EB),
+                            thickness = 1.dp
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Google Sign In Button
+                    OutlinedButton(
+                        onClick = {
+                            try {
+                                googleSignInClient?.let { client ->
+                                    val signInIntent = client.signInIntent
+                                    googleSignInLauncher.launch(signInIntent)
+                                }
+                            } catch (e: Exception) {
+                                // Handle error
+                            }
+                        },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    enabled = !uiState.isLoading,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Black,
+                        disabledContentColor = Color(0xFF9CA3AF)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (!uiState.isLoading) Color(0xFFE5E7EB) else Color(0xFFE5E7EB)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Google Icon (simplified - you can add actual Google icon)
+                        Text(
+                            "G",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4285F4),
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            "Sign in with Google",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
