@@ -343,13 +343,14 @@ fun LoginScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Google Icon (simplified - you can add actual Google icon)
-                        Text(
-                            "G",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF4285F4),
-                            modifier = Modifier.padding(end = 8.dp)
+                        // Google Icon
+                        Image(
+                            painter = painterResource(id = com.example.myapplication.R.drawable.google),
+                            contentDescription = "Google logo",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .padding(end = 8.dp),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit
                         )
                         Text(
                             "Sign in with Google",
