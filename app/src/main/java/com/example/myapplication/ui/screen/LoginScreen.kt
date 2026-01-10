@@ -36,6 +36,7 @@ import com.example.myapplication.ui.theme.White
 import com.example.myapplication.ui.viewmodel.LoginViewModel
 import com.example.myapplication.ui.viewmodel.ViewModelFactory
 import com.example.myapplication.util.GoogleSignInHelper
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +55,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     // Google Sign In - hanya inisialisasi jika sudah dikonfigurasi
     val isGoogleSignInConfigured = remember { GoogleSignInHelper.isGoogleSignInConfigured(context) }
@@ -88,13 +90,23 @@ fun LoginScreen(
     }
     
     LaunchedEffect(uiState.requiresVerification) {
-        if (uiState.requiresVerification) {
+        if (uiState.requiresVerification && uiState.email.isNotBlank()) {
+            // Tampilkan snackbar seperti toast di TSX
+            snackbarHostState.showSnackbar(
+                message = "📧 Email Belum Diverifikasi\nOTP telah dikirim ke email Anda. Silakan verifikasi email untuk melanjutkan.",
+                duration = SnackbarDuration.Short
+            )
+            // Redirect ke verify OTP setelah snackbar ditampilkan
+            kotlinx.coroutines.delay(1500) // Delay untuk menampilkan snackbar
             onNavigateToVerifyOTP(uiState.email)
         }
     }
     
     Scaffold(
-        containerColor = White
+        containerColor = White,
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        }
     ) { paddingValues ->
         Box(
             modifier = Modifier

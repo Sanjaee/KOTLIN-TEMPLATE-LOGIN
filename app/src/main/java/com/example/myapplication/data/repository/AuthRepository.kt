@@ -7,6 +7,8 @@ import com.example.myapplication.data.preferences.PreferencesManager
 import kotlinx.coroutines.flow.first
 import org.json.JSONObject
 import retrofit2.Response
+import com.google.gson.Gson
+import com.google.gson.JsonParser
 
 class AuthRepository(private val context: Context) {
     private val apiService = ApiClient.authApiService
@@ -54,21 +56,76 @@ class AuthRepository(private val context: Context) {
                         Result.success(authResponse)
                     } ?: Result.failure(Exception("Response data is null"))
                 } else {
-                    val errorMessage = parseErrorMessage(response.errorBody()?.string())
-                    Result.failure(Exception(errorMessage))
+                    val errorBody = response.errorBody()?.string()
+                    val parsedError = parseLoginError(errorBody, request.email)
+                    Result.failure(parsedError)
                 }
             } else {
-                // Check if it's unverified email error
+                // Check if it's unverified email error (401 with requires_verification)
+                val errorBody = response.errorBody()?.string()
                 if (response.code() == 401) {
-                    val errorMessage = parseErrorMessage(response.errorBody()?.string()) ?: "Email not verified"
-                    Result.failure(Exception(errorMessage))
+                    val parsedError = parseLoginError(errorBody, request.email)
+                    Result.failure(parsedError)
                 } else {
-                    val errorMessage = parseErrorMessage(response.errorBody()?.string())
+                    val errorMessage = parseErrorMessage(errorBody)
                     Result.failure(Exception(errorMessage))
                 }
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            // If it's already EmailVerificationRequiredException, rethrow it
+            if (e is EmailVerificationRequiredException) {
+                Result.failure(e)
+            } else {
+                Result.failure(e)
+            }
+        }
+    }
+    
+    private fun parseLoginError(errorBody: String?, defaultEmail: String): Exception {
+        if (errorBody.isNullOrBlank()) {
+            return Exception("Login failed")
+        }
+        
+        return try {
+            // Try to parse JSON error response using JSONObject first (more reliable)
+            val jsonObject = JSONObject(errorBody)
+            
+            // Check for error object with requires_verification
+            if (jsonObject.has("error")) {
+                val errorObj = jsonObject.getJSONObject("error")
+                
+                // Check if requires_verification is true
+                val requiresVerification = errorObj.optBoolean("requires_verification", false)
+                val email = errorObj.optString("email", defaultEmail)
+                val errorMessage = errorObj.optString("message", null)
+                    ?: jsonObject.optString("message", null)
+                    ?: "OTP telah dikirim ke email Anda. Silakan verifikasi email untuk melanjutkan."
+                
+                if (requiresVerification) {
+                    return EmailVerificationRequiredException(email.ifEmpty { defaultEmail }, errorMessage)
+                }
+            }
+            
+            // Check if message contains verification keywords
+            val errorMessage = parseErrorMessage(errorBody)
+            if (errorMessage.contains("not verified", ignoreCase = true) ||
+                errorMessage.contains("requires verification", ignoreCase = true) ||
+                errorMessage.contains("belum diverifikasi", ignoreCase = true) ||
+                errorMessage.contains("email belum", ignoreCase = true)) {
+                return EmailVerificationRequiredException(defaultEmail, errorMessage)
+            }
+            
+            Exception(errorMessage)
+        } catch (e: Exception) {
+            // If JSON parsing fails, check error message text
+            val errorMessage = parseErrorMessage(errorBody)
+            if (errorMessage.contains("not verified", ignoreCase = true) ||
+                errorMessage.contains("requires verification", ignoreCase = true) ||
+                errorMessage.contains("belum diverifikasi", ignoreCase = true) ||
+                errorMessage.contains("email belum", ignoreCase = true)) {
+                return EmailVerificationRequiredException(defaultEmail, errorMessage)
+            }
+            Exception(errorMessage)
         }
     }
     
@@ -236,7 +293,7 @@ class AuthRepository(private val context: Context) {
     
     suspend fun getCurrentUser(): Result<User> {
         return try {
-            val token = getAccessToken() ?: return Result.failure(Exception("Not authenticated"))
+            val token = getAccessToken() ?: return Result.failure(TokenExpiredException("Not authenticated"))
             val response = apiService.getMe("Bearer $token")
             if (response.isSuccessful) {
                 val responseBody = response.body()
@@ -250,11 +307,22 @@ class AuthRepository(private val context: Context) {
                     Result.failure(Exception(errorMessage))
                 }
             } else {
+                // Check if it's 401 Unauthorized (expired token/session)
+                if (response.code() == 401) {
+                    // Clear tokens when session expired
+                    preferencesManager.clearTokens()
+                    return Result.failure(TokenExpiredException("Session expired. Please login again."))
+                }
                 val errorMessage = parseErrorMessage(response.errorBody()?.string())
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            // If it's already TokenExpiredException, rethrow it
+            if (e is TokenExpiredException) {
+                Result.failure(e)
+            } else {
+                Result.failure(e)
+            }
         }
     }
     

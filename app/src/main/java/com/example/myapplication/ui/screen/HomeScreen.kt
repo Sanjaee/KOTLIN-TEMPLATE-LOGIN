@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -39,6 +40,14 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
+    // Handle token expired - redirect to login immediately
+    LaunchedEffect(uiState.isTokenExpired) {
+        if (uiState.isTokenExpired) {
+            // Redirect langsung ke login tanpa menampilkan error
+            onLogout()
+        }
+    }
+    
     Scaffold(
         containerColor = White
     ) { paddingValues ->
@@ -48,7 +57,23 @@ fun HomeScreen(
                 .background(White)
                 .padding(paddingValues)
         ) {
-            if (uiState.isLoading) {
+            // Don't render anything if token expired - will redirect via LaunchedEffect
+            if (uiState.isTokenExpired) {
+                // Show loading while redirecting
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(color = Black)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Redirecting to login...",
+                        color = Color(0xFF6B7280),
+                        fontSize = 16.sp
+                    )
+                }
+            } else if (uiState.isLoading) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -129,7 +154,7 @@ fun HomeScreen(
                                     color = Black
                                 )
                                 
-                                Divider(color = Color(0xFFE5E7EB))
+                                HorizontalDivider(color = Color(0xFFE5E7EB))
                                 
                                 InfoRow("Email", user.email)
                                 InfoRow("Full Name", user.fullName)
@@ -140,31 +165,34 @@ fun HomeScreen(
                             }
                         }
                     } ?: run {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFFEE2E2)
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(20.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                        // Only show error if not token expired (token expired will redirect via LaunchedEffect)
+                        if (!uiState.isTokenExpired && uiState.errorMessage != null) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFFEE2E2)
+                                ),
+                                shape = RoundedCornerShape(16.dp)
                             ) {
-                                Text(
-                                    text = "Failed to load user data",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFDC2626),
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                                
-                                uiState.errorMessage?.let { error ->
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
                                     Text(
-                                        text = error,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFFDC2626)
+                                        text = "Failed to load user data",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFDC2626),
+                                        modifier = Modifier.padding(bottom = 8.dp)
                                     )
+                                    
+                                    uiState.errorMessage?.let { error ->
+                                        Text(
+                                            text = error,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color(0xFFDC2626)
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -49,6 +49,30 @@ data class ErrorResponse(
     val message: String,
     
     @SerializedName("data")
-    val data: Map<String, Any>? = null
+    val data: Map<String, Any>? = null,
+    
+    @SerializedName("error")
+    val error: ErrorDetail? = null
 )
 
+data class ErrorDetail(
+    @SerializedName("email")
+    val email: String? = null,
+    
+    @SerializedName("requires_verification")
+    val requiresVerification: Boolean? = null,
+    
+    @SerializedName("message")
+    val message: String? = null
+)
+
+// Custom Exception untuk email verification required
+class EmailVerificationRequiredException(
+    val userEmail: String,
+    message: String? = null
+) : Exception(message ?: "OTP telah dikirim ke email Anda. Silakan verifikasi email untuk melanjutkan.")
+
+// Custom Exception untuk expired token/session
+class TokenExpiredException(
+    message: String? = null
+) : Exception(message ?: "Session expired. Please login again.")

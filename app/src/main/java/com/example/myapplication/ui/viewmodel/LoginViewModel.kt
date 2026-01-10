@@ -3,6 +3,7 @@ package com.example.myapplication.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myapplication.data.model.EmailVerificationRequiredException
 import com.example.myapplication.data.model.GoogleOAuthRequest
 import com.example.myapplication.data.model.LoginRequest
 import com.example.myapplication.data.repository.AuthRepository
@@ -30,7 +31,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     
     fun login(email: String, password: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, requiresVerification = false)
             
             // Trim whitespace and newline characters
             val trimmedEmail = email.trim()
@@ -42,18 +43,34 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoginSuccess = true,
-                        errorMessage = null
+                        errorMessage = null,
+                        requiresVerification = false
                     )
                 },
                 onFailure = { error ->
-                    val errorMsg = error.message ?: "Login failed"
-                    val requiresVerification = errorMsg.contains("not verified", ignoreCase = true)
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = errorMsg,
-                        requiresVerification = requiresVerification,
-                        email = if (requiresVerification) trimmedEmail else ""
-                    )
+                    // Check if it's EmailVerificationRequiredException
+                    if (error is EmailVerificationRequiredException) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = null, // Don't show error message, just redirect
+                            requiresVerification = true,
+                            email = error.userEmail
+                        )
+                    } else {
+                        val errorMsg = error.message ?: "Login failed"
+                        // Also check if error message contains verification keywords (backward compatibility)
+                        val requiresVerification = errorMsg.contains("not verified", ignoreCase = true) ||
+                                errorMsg.contains("requires verification", ignoreCase = true) ||
+                                errorMsg.contains("belum diverifikasi", ignoreCase = true) ||
+                                errorMsg.contains("email belum", ignoreCase = true)
+                        
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = if (requiresVerification) null else errorMsg, // Don't show error if requires verification
+                            requiresVerification = requiresVerification,
+                            email = if (requiresVerification) trimmedEmail else ""
+                        )
+                    }
                 }
             )
         }
