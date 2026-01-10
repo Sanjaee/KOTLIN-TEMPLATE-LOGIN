@@ -30,6 +30,36 @@ object GoogleSignInHelper {
         }
     }
     
+    /**
+     * Mendapatkan intent untuk sign in Google yang memaksa pemilihan akun.
+     * Method ini akan sign out terlebih dahulu untuk memastikan account picker muncul.
+     * 
+     * @param onIntentReady Callback yang dipanggil dengan sign in intent setelah sign out selesai
+     */
+    fun getSignInIntentWithAccountPicker(
+        context: Context,
+        onIntentReady: (android.content.Intent?) -> Unit
+    ) {
+        try {
+            val client = getGoogleSignInClient(context) ?: run {
+                onIntentReady(null)
+                return
+            }
+            
+            // Sign out terlebih dahulu untuk memastikan account picker muncul
+            // Ini tidak akan mempengaruhi aplikasi karena kita hanya ingin memilih akun
+            // addOnCompleteListener akan dipanggil baik untuk success maupun failure
+            client.signOut().addOnCompleteListener {
+                // Setelah sign out selesai (baik success maupun failure), ambil sign in intent
+                // Intent ini akan memaksa account picker muncul karena tidak ada akun yang tersimpan
+                val signInIntent = client.signInIntent
+                onIntentReady(signInIntent)
+            }
+        } catch (e: Exception) {
+            onIntentReady(null)
+        }
+    }
+    
     fun isGoogleSignInConfigured(context: Context): Boolean {
         return try {
             val webClientId = context.getString(R.string.google_web_client_id)

@@ -57,13 +57,6 @@ fun LoginScreen(
     
     // Google Sign In - hanya inisialisasi jika sudah dikonfigurasi
     val isGoogleSignInConfigured = remember { GoogleSignInHelper.isGoogleSignInConfigured(context) }
-    val googleSignInClient = remember(isGoogleSignInConfigured) { 
-        if (isGoogleSignInConfigured) {
-            GoogleSignInHelper.getGoogleSignInClient(context)
-        } else {
-            null
-        }
-    }
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -302,7 +295,7 @@ fun LoginScreen(
                 }
                 
                 // Google Sign In hanya ditampilkan jika sudah dikonfigurasi
-                if (isGoogleSignInConfigured && googleSignInClient != null) {
+                if (isGoogleSignInConfigured) {
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     // Divider with "OR"
@@ -335,13 +328,12 @@ fun LoginScreen(
                     // Google Sign In Button
                     OutlinedButton(
                         onClick = {
-                            try {
-                                googleSignInClient?.let { client ->
-                                    val signInIntent = client.signInIntent
-                                    googleSignInLauncher.launch(signInIntent)
+                            // Memanggil method yang akan sign out terlebih dahulu
+                            // untuk memastikan account picker muncul setiap kali
+                            GoogleSignInHelper.getSignInIntentWithAccountPicker(context) { signInIntent ->
+                                signInIntent?.let {
+                                    googleSignInLauncher.launch(it)
                                 }
-                            } catch (e: Exception) {
-                                // Handle error
                             }
                         },
                     modifier = Modifier
