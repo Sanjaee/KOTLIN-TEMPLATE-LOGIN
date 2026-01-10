@@ -61,14 +61,64 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$ANDROID_HOME/tools
 ```
 
-### 5. Clone/Buka Project
+### 5. Clone/Buka Project dari GitHub
 
+#### Clone dengan Git:
+```bash
+# Clone repository
+git clone <repository-url>
+cd <repository-name>/kotlin
+```
+
+#### Atau buka langsung di Android Studio:
 1. Buka Android Studio
-2. Pilih **File → Open**
-3. Pilih folder `kotlin` dari project ini
-4. Tunggu Gradle sync selesai (akan download dependencies otomatis)
+2. Pilih **File → New → Project from Version Control → Git**
+3. Masukkan URL repository
+4. Pilih folder `kotlin` dari project yang sudah di-clone
+5. Tunggu Gradle sync selesai (akan download dependencies otomatis)
 
-### 6. Konfigurasi API Base URL
+> **Note:** Project ini sudah dikonfigurasi untuk langsung bisa dijalankan setelah di-clone. Debug build bisa langsung digunakan tanpa setup tambahan!
+
+### 6. Setup Keystore (Opsional - Hanya untuk Release Build)
+
+Untuk build **debug**, Anda tidak perlu setup keystore. Project sudah bisa langsung dijalankan!
+
+Untuk build **release** (production), Anda perlu membuat keystore:
+
+#### Cara 1: Menggunakan Android Studio
+1. Buka **Build → Generate Signed Bundle / APK**
+2. Pilih **Create new...** untuk membuat keystore baru
+3. Isi informasi keystore dan simpan file ke `app/release.keystore`
+4. Copy file `app/keystore.properties.example` menjadi `app/keystore.properties`
+5. Edit `app/keystore.properties` dan isi dengan informasi keystore Anda:
+   ```properties
+   storePassword=your_store_password
+   keyPassword=your_key_password
+   keyAlias=release
+   storeFile=release.keystore
+   ```
+
+#### Cara 2: Menggunakan Command Line (keytool)
+```bash
+# Windows (Command Prompt atau PowerShell)
+cd app
+keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
+
+# macOS/Linux
+cd app
+keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Ikuti instruksi yang muncul untuk mengisi informasi keystore. Setelah selesai:
+1. Copy file `app/keystore.properties.example` menjadi `app/keystore.properties`
+2. Edit `app/keystore.properties` dan isi dengan password yang Anda gunakan
+
+> **Penting:** 
+> - File `release.keystore` dan `keystore.properties` **TIDAK** akan di-commit ke Git (sudah di-ignore)
+> - Simpan keystore dengan aman! Jika hilang, Anda tidak bisa update aplikasi di Play Store
+> - Untuk development/testing, Anda bisa skip step ini dan langsung build debug
+
+### 7. Konfigurasi API Base URL
 
 API base URL sudah dikonfigurasi di:
 ```
@@ -79,7 +129,7 @@ Default URL: `https://express-template-login.vercel.app/`
 
 Jika ingin mengubah, edit konstanta `BASE_URL` di file tersebut.
 
-### 7. Build Project
+### 8. Build Project
 
 #### Menggunakan Android Studio:
 
@@ -124,8 +174,10 @@ Jika ingin mengubah, edit konstanta `BASE_URL` di file tersebut.
    # macOS/Linux
    ./gradlew assembleRelease
    ```
+   
+   > **Note:** Jika keystore belum dibuat, build release masih bisa berhasil tetapi akan menggunakan debug keystore (tidak untuk production). Untuk production build, pastikan Anda sudah setup keystore terlebih dahulu (lihat langkah 6).
 
-### 8. Install APK ke Device
+### 9. Install APK ke Device
 
 #### Menggunakan Android Studio:
 1. Hubungkan device Android via USB
@@ -145,7 +197,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 3. Izinkan install dari sumber tidak dikenal jika diminta
 4. Install aplikasi
 
-### 9. Menjalankan di Emulator
+### 10. Menjalankan di Emulator
 
 1. Buka **Tools → Device Manager** di Android Studio
 2. Klik **Create Device**
@@ -214,21 +266,70 @@ Endpoints yang digunakan:
   sdk.dir=C:\\Users\\<YourUsername>\\AppData\\Local\\Android\\Sdk
   ```
   (Windows) atau path SDK Anda di macOS/Linux
+- Android Studio biasanya akan membuat file ini secara otomatis saat pertama kali membuka project
 
 ### Error: "Gradle sync failed"
 - Pastikan koneksi internet stabil (untuk download dependencies)
 - Coba **File → Invalidate Caches → Invalidate and Restart**
-- Hapus folder `.gradle` dan coba sync lagi
+- Hapus folder `.gradle` dan `build` di root project, lalu sync lagi:
+  ```bash
+  # Windows
+  rmdir /s /q .gradle build
+  gradlew.bat clean
+  
+  # macOS/Linux
+  rm -rf .gradle build
+  ./gradlew clean
+  ```
+
+### Error: "release.keystore tidak ditemukan" saat build release
+- **Ini normal untuk pertama kali!** Project sudah dikonfigurasi untuk bekerja tanpa keystore
+- Untuk build **debug**, tidak perlu keystore - langsung jalankan `./gradlew assembleDebug` atau build dari Android Studio
+- Untuk build **release** yang signed, buat keystore terlebih dahulu (lihat langkah 6 di atas)
+- Jika Anda hanya ingin test build release tanpa signing, build masih bisa berhasil tetapi akan menggunakan debug keystore
 
 ### APK tidak bisa diinstall
-- Pastikan device mengizinkan install dari sumber tidak dikenal
+- Pastikan device mengizinkan install dari sumber tidak dikenal (Settings → Security → Unknown Sources)
 - Pastikan APK untuk architecture yang benar (armeabi-v7a, arm64-v8a, x86, x86_64)
-- Coba uninstall aplikasi sebelumnya jika sudah ada
+- Coba uninstall aplikasi sebelumnya jika sudah ada dengan `adb uninstall com.example.myapplication`
+- Pastikan device memiliki storage yang cukup
 
 ### Error saat connect ke API
 - Pastikan device/emulator memiliki koneksi internet
 - Check API base URL di `ApiClient.kt`
-- Pastikan API server sedang berjalan
+- Pastikan API server sedang berjalan dan accessible
+- Untuk emulator, pastikan tidak ada firewall yang memblokir koneksi
+
+### Project tidak bisa di-clone atau dijalankan
+- Pastikan semua prerequisites sudah terinstall (JDK 17+, Android Studio)
+- Pastikan `local.properties` dibuat (Android Studio biasanya membuat ini otomatis)
+- Coba **File → Sync Project with Gradle Files** di Android Studio
+- Jika masih error, coba clean dan rebuild project
+
+## Quick Start (Setelah Clone)
+
+Jika Anda baru saja clone project ini dan ingin langsung menjalankannya:
+
+1. **Buka project di Android Studio**
+   - File → Open → pilih folder `kotlin`
+   - Tunggu Gradle sync selesai
+
+2. **Build dan Run Debug** (tidak perlu setup apapun)
+   - Klik tombol **Run** (▶️) atau tekan `Shift + F10`
+   - Pilih device/emulator
+   - Aplikasi akan langsung terinstall dan berjalan
+
+3. **Atau build APK secara manual:**
+   ```bash
+   # Windows
+   gradlew.bat assembleDebug
+   
+   # macOS/Linux
+   ./gradlew assembleDebug
+   ```
+   APK akan ada di: `app/build/outputs/apk/debug/app-debug.apk`
+
+> **Catatan:** Untuk build release yang signed (production), Anda perlu setup keystore terlebih dahulu (lihat langkah 6 di atas).
 
 ## Development
 

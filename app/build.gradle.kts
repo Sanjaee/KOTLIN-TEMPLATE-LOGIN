@@ -19,33 +19,39 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // 🔐 SIGNING CONFIG (WAJIB untuk release build)
+    // 🔐 SIGNING CONFIG (Opsional - hanya untuk release build jika keystore ada)
+    val keystoreFile = file("release.keystore")
+    val hasKeystore = keystoreFile.exists()
+    
+    if (!hasKeystore) {
+        println("ℹ️  Info: release.keystore tidak ditemukan (normal untuk development)")
+        println("   Build release akan menggunakan debug keystore")
+        println("   Untuk production build, buat keystore dengan:")
+        println("   keytool -genkey -v -keystore app/release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000")
+    }
+    
     signingConfigs {
-        create("release") {
-            val keystoreFile = file("release.keystore")
-            if (!keystoreFile.exists()) {
-                throw GradleException(
-                    "❌ ERROR: release.keystore tidak ditemukan di app/release.keystore\n" +
-                    "   Pastikan file keystore ada sebelum build release!"
-                )
+        if (hasKeystore) {
+            create("release") {
+                storeFile = keystoreFile
+                storePassword = "123123"
+                keyAlias = "release"
+                keyPassword = "123123"
+                
+                println("✅ Signing Config Release ditemukan:")
+                println("   - Keystore: ${keystoreFile.absolutePath}")
+                println("   - Key Alias: release")
             }
-            storeFile = keystoreFile
-            storePassword = "123123"
-            keyAlias = "release"
-            keyPassword = "123123"
-            
-            // Verifikasi keystore bisa dibaca
-            println("✅ Signing Config Release:")
-            println("   - Keystore: ${keystoreFile.absolutePath}")
-            println("   - Key Alias: release")
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // 🔑 WAJIB: Gunakan release signing config
-            signingConfig = signingConfigs.getByName("release")
+            // 🔑 Gunakan release signing config hanya jika keystore ada
+            if (hasKeystore && signingConfigs.findByName("release") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
