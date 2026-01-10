@@ -1,8 +1,10 @@
 package com.example.myapplication.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -11,14 +13,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.myapplication.ui.theme.Black
 import com.example.myapplication.ui.theme.White
 import com.example.myapplication.ui.viewmodel.HomeViewModel
@@ -81,14 +86,12 @@ fun HomeScreen(
                         }
                     }
                     
-                    // Logo
-                    Image(
-                        painter = painterResource(id = com.example.myapplication.R.drawable.logo),
-                        contentDescription = "zacode logo",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .padding(bottom = 24.dp)
+                    // Profile Photo or Logo
+                    ProfileImage(
+                        profilePhotoUrl = uiState.user?.profilePhoto,
+                        modifier = Modifier.size(100.dp)
                     )
+                    Spacer(modifier = Modifier.height(24.dp))
                     
                     uiState.user?.let { user ->
                         Text(
@@ -168,6 +171,44 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileImage(
+    profilePhotoUrl: String?,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    
+    // Box dengan size square dan clip CircleShape untuk memastikan bentuk bulat sempurna
+    Box(
+        modifier = modifier
+            .size(100.dp)  // Pastikan square size (width == height)
+            .clip(CircleShape)  // Clip dengan CircleShape
+    ) {
+        if (!profilePhotoUrl.isNullOrBlank()) {
+            // Tampilkan foto profil Google jika ada
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(profilePhotoUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Profile photo",
+                modifier = Modifier.fillMaxSize(),  // Isi penuh Box
+                contentScale = ContentScale.Crop,  // Crop untuk memastikan gambar mengisi lingkaran sempurna
+                placeholder = painterResource(id = com.example.myapplication.R.drawable.logo),
+                error = painterResource(id = com.example.myapplication.R.drawable.logo)
+            )
+        } else {
+            // Tampilkan logo jika tidak ada foto profil
+            Image(
+                painter = painterResource(id = com.example.myapplication.R.drawable.logo),
+                contentDescription = "zacode logo",
+                modifier = Modifier.fillMaxSize(),  // Isi penuh Box
+                contentScale = ContentScale.Crop  // Crop juga untuk logo agar bulat sempurna
+            )
         }
     }
 }

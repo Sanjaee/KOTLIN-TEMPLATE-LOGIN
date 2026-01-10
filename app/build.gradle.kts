@@ -111,6 +111,9 @@ dependencies {
     // 🔐 Google Sign In
     implementation(libs.play.services.auth)
 
+    // Image Loading
+    implementation(libs.coil.compose)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
