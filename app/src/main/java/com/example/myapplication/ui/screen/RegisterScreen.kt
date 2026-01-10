@@ -90,6 +90,26 @@ fun RegisterScreen(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
+                // Error Message
+                uiState.errorMessage?.let { error ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFEE2E2)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            color = Color(0xFFDC2626),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+                
                 // Full Name Field
                 OutlinedTextField(
                     value = fullName,
@@ -329,24 +349,6 @@ fun RegisterScreen(
                             color = Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
-                        )
-                    }
-                }
-                
-                // Error Message
-                uiState.errorMessage?.let { error ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFEE2E2)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = error,
-                            color = Color(0xFFDC2626),
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(12.dp)
                         )
                     }
                 }

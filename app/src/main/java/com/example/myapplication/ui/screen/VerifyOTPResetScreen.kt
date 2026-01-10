@@ -79,6 +79,26 @@ fun VerifyOTPResetScreen(
                     modifier = Modifier.padding(bottom = 32.dp)
                 )
                 
+                // Error Message
+                uiState.errorMessage?.let { error ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFEE2E2)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            color = Color(0xFFDC2626),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+                
                 // OTP Input
                 OtpInputField(
                     otpText = otpCode,
@@ -154,25 +174,6 @@ fun VerifyOTPResetScreen(
                         color = Black,
                         fontWeight = FontWeight.Medium
                     )
-                }
-                
-                // Error Message
-                uiState.errorMessage?.let { error ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFEE2E2)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = error,
-                            color = Color(0xFFDC2626),
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(12.dp)
-                        )
-                    }
                 }
             }
         }
